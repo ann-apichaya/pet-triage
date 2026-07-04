@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ข้อมูลการประเมินอาการ (สำหรับทีม) - โรงพยาบาลสัตว์กิตติคุณ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#0E5A54; --teal-dark:#0A423E; --mint:#F1F7F5; --ink:#20302E; --muted:#5C6E6B;
+    --line:#D9E5E2; --card:#FFFFFF;
+    --red:#C0392B; --red-bg:#FCEBE8;
+    --amber:#9A6700; --amber-bg:#FFF6E0;
+    --green:#2E7D4F; --green-bg:#EAF6EE;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Anuphan',sans-serif;background:var(--mint);color:var(--ink);font-size:16px;line-height:1.5}
+  .wrap{max-width:640px;margin:0 auto;padding:14px 14px 50px}
+
+  .hosp{display:flex;align-items:center;gap:10px;padding:10px 2px 12px}
+  .hosp .logo{width:38px;height:38px;border-radius:11px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:19px}
+  .hosp .name{font-weight:700;font-size:15.5px;color:var(--teal-dark)}
+  .hosp .sub{font-size:12.5px;color:var(--muted)}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 16px;box-shadow:0 2px 8px rgba(14,90,84,.05)}
+  h2{font-size:18px;font-weight:700;color:var(--teal-dark)}
+  .hint{font-size:13.5px;color:var(--muted)}
+
+  input[type=password],input[type=text],input[type=date]{width:100%;min-height:46px;padding:10px 12px;border:1.5px solid var(--line);border-radius:11px;font-family:inherit;font-size:16px;background:#fff}
+  input:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal)}
+  .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:14px;border:none;border-radius:12px;background:var(--teal);color:#fff;font-family:inherit;font-size:16.5px;font-weight:700;cursor:pointer}
+  .btn:active{background:var(--teal-dark)}
+  .err{color:var(--red);font-weight:600;font-size:14px;margin-top:10px;display:none}
+
+  /* toolbar */
+  .toolbar{position:sticky;top:0;background:var(--mint);padding:6px 0 10px;z-index:5}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+  .chip{flex-shrink:0;padding:8px 14px;border-radius:999px;border:1.5px solid var(--line);background:#fff;font-size:14px;font-weight:600;cursor:pointer;user-select:none;font-family:inherit}
+  .chip.on{background:var(--teal);border-color:var(--teal);color:#fff}
+  .chip.lv-red.on{background:var(--red);border-color:var(--red)}
+  .chip.lv-amber.on{background:var(--amber);border-color:var(--amber)}
+  .chip.lv-green.on{background:var(--green);border-color:var(--green)}
+  .range{display:none;gap:8px;margin-top:6px}
+  .range.show{display:flex}
+  .searchrow{margin-top:6px;position:relative}
+  .searchrow input{padding-right:74px}
+  .searchrow .clear{position:absolute;right:8px;top:8px;bottom:8px;padding:0 12px;border:none;border-radius:9px;background:var(--line);font-family:inherit;font-size:13.5px;cursor:pointer}
+  .summary{display:flex;gap:8px;margin-top:10px;font-size:13.5px;flex-wrap:wrap}
+  .summary span{padding:5px 11px;border-radius:999px;background:#fff;border:1px solid var(--line);font-weight:600}
+  .summary .s-red{color:var(--red)} .summary .s-amber{color:var(--amber)} .summary .s-green{color:var(--green)}
+
+  /* case cards */
+  .case{background:#fff;border:1px solid var(--line);border-left:6px solid var(--line);border-radius:14px;padding:13px 14px;margin-top:10px}
+  .case.red{border-left-color:var(--red)}
+  .case.amber{border-left-color:var(--amber)}
+  .case.green{border-left-color:var(--green)}
+  .case .top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .badge{padding:3px 11px;border-radius:999px;color:#fff;font-weight:700;font-size:13px}
+  .badge.red{background:var(--red)} .badge.amber{background:var(--amber)} .badge.green{background:var(--green)}
+  .time{font-size:13px;color:var(--muted);font-weight:600}
+  .who{font-weight:700;margin-top:6px;font-size:15.5px}
+  .sym{margin-top:4px;font-size:14.5px}
+  .sym b{color:var(--red)}
+  .meta{margin-top:6px;font-size:13.5px;color:var(--muted)}
+  .contact-line{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .tel{display:inline-flex;align-items:center;padding:7px 14px;border-radius:999px;background:var(--teal);color:#fff;font-weight:700;font-size:14px;text-decoration:none}
+  .status-tag{font-size:13px;padding:5px 11px;border-radius:999px;background:var(--mint);border:1px solid var(--line);font-weight:600}
+
+  /* group timeline */
+  .group{background:#fff;border:1.5px solid var(--teal);border-radius:16px;margin-top:12px;overflow:hidden}
+  .group .ghead{background:#E7F2F0;padding:11px 14px;font-weight:700;color:var(--teal-dark);font-size:14.5px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .group .gbody{padding:4px 14px 12px}
+  .tl{position:relative;padding-left:22px;margin-top:12px}
+  .tl::before{content:"";position:absolute;left:6px;top:6px;bottom:-14px;width:2px;background:var(--line)}
+  .tl:last-child::before{bottom:auto;height:calc(100% - 6px)}
+  .tl .dot{position:absolute;left:0;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px var(--line)}
+  .tl .dot.red{background:var(--red)} .tl .dot.amber{background:var(--amber)} .tl .dot.green{background:var(--green)}
+  .tl .t-time{font-size:12.5px;color:var(--muted);font-weight:600}
+  .tl .t-line{font-size:14.5px;margin-top:2px}
+
+  .empty{margin-top:24px;text-align:center;color:var(--muted)}
+  .loading{margin-top:24px;text-align:center;color:var(--teal);font-weight:600}
+  .reloadbar{margin-top:14px;display:flex;gap:8px}
+  .btn.ghost{background:#fff;color:var(--teal);border:1.5px solid var(--teal);font-weight:600;min-height:44px;margin-top:0;font-size:15px}
+  .note{margin-top:14px;padding:11px 13px;border-radius:11px;background:#fff;border:1px dashed var(--line);font-size:12.5px;color:var(--muted)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hosp">
+    <div class="logo">ก</div>
+    <div>
+      <div class="name">ข้อมูลการประเมินอาการ (สำหรับทีม)</div>
+      <div class="sub">โรงพยาบาลสัตว์กิตติคุณ · ดูอย่างเดียว แก้ไขข้อมูลได้ที่ Google Sheets</div>
+    </div>
+  </div>
+
+  <!-- login -->
+  <div class="card" id="loginBox">
+    <h2>เข้าสู่ระบบทีมงาน</h2>
+    <p class="hint" style="margin:6px 0 12px">หน้านี้มีข้อมูลติดต่อของลูกค้า ใช้ภายในทีมเท่านั้น ห้ามแชร์ลิงก์และรหัสให้บุคคลภายนอก</p>
+    <input type="password" id="pass" placeholder="รหัสผ่านทีม" autocomplete="off">
+    <div class="err" id="loginErr">รหัสไม่ถูกต้อง หรือเชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง</div>
+    <button class="btn" onclick="login()">เข้าใช้งาน</button>
+  </div>
+
+  <!-- main -->
+  <div id="main" class="hidden">
+    <div class="toolbar">
+      <div class="chips" id="dateChips">
+        <button class="chip on" data-d="today">วันนี้</button>
+        <button class="chip" data-d="7">7 วันล่าสุด</button>
+        <button class="chip" data-d="30">30 วันล่าสุด</button>
+        <button class="chip" data-d="custom">กำหนดช่วงเอง</button>
+      </div>
+      <div class="range" id="rangeBox">
+        <input type="date" id="dFrom">
+        <input type="date" id="dTo">
+      </div>
+      <div class="chips" style="margin-top:6px" id="lvChips">
+        <button class="chip on" data-lv="all">ทุกระดับ</button>
+        <button class="chip lv-red" data-lv="แดง">แดง</button>
+        <button class="chip lv-amber" data-lv="เหลือง">เหลือง</button>
+        <button class="chip lv-green" data-lv="เขียว">เขียว</button>
+        <button class="chip" id="groupChip">จัดกลุ่มเคสซ้ำ</button>
+      </div>
+      <div class="searchrow">
+        <input type="text" id="q" placeholder="ค้นหา: เบอร์โทร ชื่อสัตว์ ชื่อเจ้าของ หรืออาการ">
+        <button class="clear" onclick="clearSearch()">ล้าง</button>
+      </div>
+      <div class="summary" id="summary"></div>
+    </div>
+
+    <div id="list"></div>
+
+    <div class="reloadbar">
+      <button class="btn ghost" onclick="loadData()">โหลดข้อมูลใหม่</button>
+      <button class="btn ghost" onclick="logout()">ออกจากระบบ</button>
+    </div>
+    <div class="note">หน้านี้แสดงข้อมูลย้อนหลังสูงสุด 90 วัน การจัดกลุ่มเคสซ้ำใช้เบอร์โทรเป็นตัวเชื่อม เคสที่ลูกค้าไม่ได้กรอกเบอร์จะไม่ถูกจัดกลุ่ม ข้อมูลเก่ากว่านั้นดูได้ใน Google Sheets</div>
+  </div>
+
+</div>
+
+<script>
+/* ================= ตั้งค่า ================= */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyrYgxNm3QUJTllGdgGht9pwbhKg_UzgGFbnuYGqpcqKovQkJwxeapYIC8iv8O8yl9ksg/exec";   // URL เดียวกับที่ใช้ในฟอร์มลูกค้า
+
+/* ================= สถานะ ================= */
+let ROWS = [];            // ข้อมูลทั้งหมดจากชีท
+let dateMode = "today";
+let lvMode = "all";
+let groupMode = false;
+let PASS = sessionStorage.getItem("teamPass") || "";
+
+/* ================= เข้าสู่ระบบ ================= */
+function login(){
+  const p = document.getElementById("pass").value.trim();
+  if(!p) return;
+  PASS = p;
+  loadData(true);
+}
+function logout(){
+  sessionStorage.removeItem("teamPass");
+  location.reload();
+}
+if(PASS){ document.getElementById("loginBox").classList.add("hidden"); document.getElementById("main").classList.remove("hidden"); loadData(); }
+
+/* ================= โหลดข้อมูลแบบ JSONP ================= */
+let cbCount = 0;
+function loadData(isLogin){
+  const list = document.getElementById("list");
+  list.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
+  const cb = "cbList" + (++cbCount);
+  window[cb] = function(res){
+    delete window[cb];
+    if(!res || !res.ok){
+      if(isLogin){
+        document.getElementById("loginErr").style.display = "block";
+      } else {
+        list.innerHTML = '<div class="empty">โหลดข้อมูลไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วกดโหลดข้อมูลใหม่</div>';
+      }
+      return;
+    }
+    sessionStorage.setItem("teamPass", PASS);
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("main").classList.remove("hidden");
+    ROWS = res.rows.map(parseRow).filter(r=>r.dt);
+    render();
+  };
+  const s = document.createElement("script");
+  s.src = GAS_URL + "?action=list&pass=" + encodeURIComponent(PASS) + "&callback=" + cb;
+  s.onerror = ()=>{ window[cb] && window[cb](null); };
+  document.body.appendChild(s);
+}
+
+/* แปลงแถวจากชีท (ตามลำดับ 15 คอลัมน์) เป็น object */
+function parseRow(a){
+  const dt = parseThaiDate(a[0]);
+  return {
+    timeText: a[0]||"", dt: dt, sid: a[1]||"",
+    species: a[2]||"", age: a[3]||"", sex: a[4]||"",
+    emg: a[5]||"", sym: a[6]||"", other: a[7]||"",
+    duration: a[8]||"", water: a[9]||"", level: a[10]||"",
+    pet: a[11]||"", owner: a[12]||"", phone: normPhone(a[13]||""), phoneRaw: a[13]||"",
+    status: a[14]||""
+  };
+}
+function parseThaiDate(s){          // "dd/MM/yyyy HH:mm:ss"
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(s||"");
+  if(!m) return null;
+  return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +(m[6]||0));
+}
+function normPhone(s){ return String(s).replace(/[^0-9]/g,""); }
+
+/* ================= ตัวกรอง ================= */
+document.querySelectorAll("#dateChips .chip").forEach(c=>{
+  c.onclick = ()=>{
+    document.querySelectorAll("#dateChips .chip").forEach(x=>x.classList.remove("on"));
+    c.classList.add("on");
+    dateMode = c.dataset.d;
+    document.getElementById("rangeBox").classList.toggle("show", dateMode==="custom");
+    render();
+  };
+});
+document.querySelectorAll("#lvChips .chip[data-lv]").forEach(c=>{
+  c.onclick = ()=>{
+    document.querySelectorAll("#lvChips .chip[data-lv]").forEach(x=>x.classList.remove("on"));
+    c.classList.add("on");
+    lvMode = c.dataset.lv;
+    render();
+  };
+});
+document.getElementById("groupChip").onclick = function(){
+  groupMode = !groupMode;
+  this.classList.toggle("on", groupMode);
+  render();
+};
+document.getElementById("q").addEventListener("input", render);
+document.getElementById("dFrom").addEventListener("change", render);
+document.getElementById("dTo").addEventListener("change", render);
+function clearSearch(){ document.getElementById("q").value=""; render(); }
+
+function inDateRange(r){
+  const now = new Date();
+  const day0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if(dateMode==="today") return r.dt >= day0;
+  if(dateMode==="7")  return r.dt >= new Date(day0 - 6*86400000);
+  if(dateMode==="30") return r.dt >= new Date(day0 - 29*86400000);
+  const f = document.getElementById("dFrom").value;
+  const t = document.getElementById("dTo").value;
+  if(f && r.dt < new Date(f+"T00:00:00")) return false;
+  if(t && r.dt > new Date(t+"T23:59:59")) return false;
+  return true;
+}
+function matchSearch(r, q){
+  if(!q) return true;
+  const qq = q.toLowerCase();
+  const qNum = normPhone(q);
+  if(qNum.length >= 4 && r.phone.includes(qNum)) return true;
+  return [r.pet, r.owner, r.emg, r.sym, r.other, r.species, r.status]
+         .some(v => String(v).toLowerCase().includes(qq));
+}
+function filtered(){
+  const q = document.getElementById("q").value.trim();
+  return ROWS.filter(r => inDateRange(r) && (lvMode==="all" || r.level===lvMode) && matchSearch(r, q));
+}
+
+/* ================= แสดงผล ================= */
+const LV = { "แดง":{cls:"red", label:"ฉุกเฉิน"}, "เหลือง":{cls:"amber", label:"ภายใน 24 ชม."}, "เขียว":{cls:"green", label:"นัดล่วงหน้าได้"} };
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function fmtTime(d){
+  const dd = String(d.getDate()).padStart(2,"0"), mm = String(d.getMonth()+1).padStart(2,"0");
+  const hh = String(d.getHours()).padStart(2,"0"), mi = String(d.getMinutes()).padStart(2,"0");
+  return dd+"/"+mm+"/"+(d.getFullYear()+543).toString().slice(-2)+" "+hh+":"+mi;
+}
+function symText(r){
+  let parts = [];
+  if(r.emg) parts.push("<b>ฉุกเฉิน: "+esc(r.emg)+"</b>");
+  if(r.sym) parts.push(esc(r.sym));
+  if(r.other) parts.push("อื่นๆ: "+esc(r.other));
+  return parts.join(" · ") || "-";
+}
+function caseCard(r){
+  const lv = LV[r.level] || {cls:"", label:esc(r.level)};
+  const who = (r.pet ? "น้อง"+esc(r.pet) : esc(r.species)) + " · " + esc(r.species) + (r.age?" · "+esc(r.age):"") + (r.sex?" · เพศ"+esc(r.sex):"");
+  return '<div class="case '+lv.cls+'">'+
+    '<div class="top"><span class="badge '+lv.cls+'">'+esc(r.level)+' '+lv.label+'</span><span class="time">'+fmtTime(r.dt)+'</span></div>'+
+    '<div class="who">'+who+(r.owner?' · เจ้าของ: '+esc(r.owner):'')+'</div>'+
+    '<div class="sym">'+symText(r)+'</div>'+
+    '<div class="meta">เป็นมา: '+esc(r.duration||"-")+' · กินน้ำ: '+esc(r.water||"-")+'</div>'+
+    '<div class="contact-line">'+
+      (r.phone ? '<a class="tel" href="tel:'+r.phone+'">โทร '+esc(r.phoneRaw)+'</a>' : '<span class="status-tag">ไม่มีเบอร์ติดต่อ</span>')+
+      '<span class="status-tag">สถานะ: '+esc(r.status||"-")+'</span>'+
+    '</div></div>';
+}
+function render(){
+  const rows = filtered().sort((a,b)=>b.dt-a.dt);
+  const n = { "แดง":0, "เหลือง":0, "เขียว":0 };
+  rows.forEach(r=>{ if(n[r.level]!==undefined) n[r.level]++; });
+  document.getElementById("summary").innerHTML =
+    '<span>ทั้งหมด '+rows.length+' เคส</span>'+
+    '<span class="s-red">แดง '+n["แดง"]+'</span>'+
+    '<span class="s-amber">เหลือง '+n["เหลือง"]+'</span>'+
+    '<span class="s-green">เขียว '+n["เขียว"]+'</span>';
+
+  const list = document.getElementById("list");
+  if(rows.length===0){ list.innerHTML = '<div class="empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</div>'; return; }
+  list.innerHTML = groupMode ? renderGroups(rows) : rows.map(caseCard).join("");
+}
+
+/* จัดกลุ่มเคสซ้ำตามเบอร์โทร แสดงเป็น timeline เก่า -> ใหม่ */
+function renderGroups(rows){
+  const groups = {}, singles = [];
+  rows.forEach(r=>{
+    if(r.phone){ (groups[r.phone] = groups[r.phone] || []).push(r); }
+    else singles.push(r);
+  });
+  const multi = [], single = [];
+  Object.values(groups).forEach(g => (g.length>1 ? multi : single).push(g));
+  multi.sort((a,b)=>b[0].dt-a[0].dt);           // กลุ่มที่มีเคสล่าสุดขึ้นก่อน
+  let html = "";
+  multi.forEach(g=>{
+    const latest = g[0];
+    const name = latest.pet ? "น้อง"+esc(latest.pet) : esc(latest.species);
+    const tl = [...g].sort((a,b)=>a.dt-b.dt).map(r=>{
+      const lv = LV[r.level] || {cls:""};
+      return '<div class="tl"><span class="dot '+lv.cls+'"></span>'+
+        '<div class="t-time">'+fmtTime(r.dt)+' · '+esc(r.level)+(r.status?' · '+esc(r.status):'')+'</div>'+
+        '<div class="t-line">'+symText(r)+'</div></div>';
+    }).join("");
+    html += '<div class="group"><div class="ghead">'+
+      '<span>'+name+(latest.owner?' · '+esc(latest.owner):'')+' · ประเมิน '+g.length+' ครั้ง</span>'+
+      (latest.phone?'<a class="tel" href="tel:'+latest.phone+'" style="padding:4px 12px">โทร '+esc(latest.phoneRaw)+'</a>':'')+
+      '</div><div class="gbody">'+tl+'</div></div>';
+  });
+  const rest = single.map(g=>g[0]).concat(singles).sort((a,b)=>b.dt-a.dt);
+  html += rest.map(caseCard).join("");
+  return html;
+}
+</script>
+</body>
+</html>
