@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>ระบบสมาชิก โรงพยาบาลสัตว์กิตติคุณ</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --ink:#16323d; --ink2:#5b7480; --line:#dbe4e8; --bg:#f4f7f8;
+    --brand:#1f4e5f; --brand2:#2c6b80; --ok:#137a4b; --warn:#a8480d; --bad:#b3261e;
+    --silver:#8d9aa2; --gold:#a97f13; --plat:#5d5d8a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Sarabun","Noto Sans Thai",system-ui,sans-serif;font-size:16px}
+  .wrap{max-width:520px;margin:0 auto;padding:14px 14px 40px}
+  header{display:flex;align-items:center;justify-content:space-between;
+         padding:12px 14px;background:var(--brand);color:#fff;border-radius:12px;margin-bottom:14px}
+  header h1{font-size:16px;margin:0;font-weight:600;line-height:1.3}
+  .who{font-size:12px;opacity:.85;text-align:right}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+  label{display:block;font-size:13px;color:var(--ink2);margin-bottom:6px}
+  input,select,textarea{width:100%;padding:13px;border:1px solid var(--line);border-radius:9px;
+        font-size:17px;font-family:inherit;background:#fff;color:var(--ink)}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--brand2);border-color:transparent}
+  button{width:100%;padding:14px;border:0;border-radius:9px;font-size:16px;font-weight:600;
+         font-family:inherit;background:var(--brand);color:#fff;cursor:pointer;margin-top:10px}
+  button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+  button.warn{background:var(--bad)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:8px}
+  .row>*{flex:1}
+  .hide{display:none!important}
+  .msg{padding:11px 13px;border-radius:9px;font-size:14px;margin:10px 0;line-height:1.5}
+  .msg.err{background:#fdecea;color:var(--bad)}
+  .msg.ok{background:#e7f5ee;color:var(--ok)}
+  .msg.info{background:#eef4f6;color:var(--ink2)}
+  .hit{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;background:#fff}
+  .hit:active{background:#eef4f6}
+  .hit b{font-size:16px}
+  .hit small{color:var(--ink2)}
+  .tier{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:700;color:#fff}
+  .t-Silver{background:var(--silver)} .t-Gold{background:var(--gold)} .t-Platinum{background:var(--plat)}
+  .big{font-size:34px;font-weight:800;line-height:1.1}
+  .kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .kv:last-child{border:0}
+  .kv span:first-child{color:var(--ink2)}
+  .confirm{background:#fff8e6;border:1px solid #e8cf8a;border-radius:10px;padding:14px;text-align:center;margin:12px 0}
+  .arrow{font-size:22px;font-weight:800;margin:6px 0}
+  #reader{border-radius:10px;overflow:hidden;margin-top:10px}
+  .foot{text-align:center;font-size:11px;color:var(--ink2);margin-top:18px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>ระบบสมาชิก<br>โรงพยาบาลสัตว์กิตติคุณ</h1>
+    <div class="who" id="who"></div>
+  </header>
+
+  <!-- 1. เข้าสู่ระบบ -->
+  <section class="card" id="scLogin">
+    <label>ใส่ PIN 4 หลักของพนักงาน</label>
+    <input id="pin" type="tel" inputmode="numeric" maxlength="4" placeholder="****" autocomplete="off">
+    <button id="btnLogin">เข้าสู่ระบบ</button>
+    <div id="loginMsg"></div>
+  </section>
+
+  <!-- 2. ค้นหาลูกค้า -->
+  <section class="card hide" id="scFind">
+    <label>ค้นหาลูกค้า ด้วยเบอร์โทร ชื่อ หรือรหัสลูกค้า</label>
+    <input id="q" type="search" placeholder="เช่น 0812345678 หรือ สมชาย" autocomplete="off">
+    <div class="row">
+      <button id="btnFind">ค้นหา</button>
+      <button id="btnScan" class="ghost">ยิง QR</button>
+    </div>
+    <div id="reader" class="hide"></div>
+    <button id="btnStopScan" class="ghost hide">ปิดกล้อง</button>
+    <div id="findMsg"></div>
+    <div id="hits"></div>
+  </section>
+
+  <!-- 3. ข้อมูลลูกค้า -->
+  <section class="card hide" id="scMember">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div>
+        <div style="font-size:19px;font-weight:700" id="mName"></div>
+        <small style="color:var(--ink2)" id="mSub"></small>
+      </div>
+      <span class="tier" id="mTier"></span>
+    </div>
+
+    <div class="msg info" style="margin-top:12px">
+      ถามยืนยันกับลูกค้าก่อนตัดแต้มทุกครั้ง
+    </div>
+
+    <div style="text-align:center;margin:6px 0 12px">
+      <div style="font-size:12px;color:var(--ink2)">แต้มคงเหลือ</div>
+      <div class="big" id="mBal">0</div>
+    </div>
+
+    <div class="kv"><span>รหัสลูกค้า</span><b id="mCid"></b></div>
+    <div class="kv"><span>แต้มที่ได้ทั้งหมด</span><b id="mEarn"></b></div>
+    <div class="kv"><span>ระดับหมดอายุ</span><b id="mExp"></b></div>
+
+    <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+
+    <label>เลือกรายการที่ลูกค้าจะแลก</label>
+    <select id="item"></select>
+
+    <div id="customBox" class="hide" style="margin-top:10px">
+      <label>ชื่อกิจกรรม / ของรางวัล</label>
+      <input id="customLabel" placeholder="เช่น ส่วนลดค่าห้อง งานวันเด็ก">
+      <label style="margin-top:10px">แต้มที่จะตัด</label>
+      <input id="customPts" type="tel" inputmode="numeric" placeholder="เช่น 30">
+    </div>
+
+    <div id="noteBox" style="margin-top:10px">
+      <label>หมายเหตุ <span id="noteReq" style="color:var(--bad)"></span></label>
+      <input id="note" placeholder="ไม่บังคับ">
+    </div>
+
+    <div class="confirm hide" id="confirmBox">
+      <div style="font-size:13px;color:var(--ink2)" id="cfLabel"></div>
+      <div class="arrow"><span id="cfBefore"></span> &rarr; <span id="cfAfter"></span></div>
+      <div style="font-size:12px;color:var(--ink2)">ตรวจตัวเลขกับลูกค้าก่อนกดยืนยัน</div>
+    </div>
+
+    <button id="btnPreview">ตรวจสอบก่อนตัดแต้ม</button>
+    <button id="btnConfirm" class="warn hide">ยืนยันตัดแต้ม</button>
+    <button id="btnBack" class="ghost">ค้นหาคนอื่น</button>
+    <div id="memberMsg"></div>
+  </section>
+
+  <div class="foot">
+    ทุกรายการบันทึกชื่อผู้ทำและเวลาเสมอ<br>
+    แต้มจากค่ารักษาอัปเดตวันละครั้ง ภายใน 24 ชม.
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ใส่ URL เว็บแอปที่ได้จากการ Deploy ตรงนี้
+   ============================================================ */
+var API = 'https://script.google.com/macros/s/AKfycbyzYsfL0Nu6A595CaHRLSabQS1iL6tuPQ31-gZAI-ZjICDcM9gihOHlomkBOLFqH_91/exec';
+
+var S = { pin:'', staff:null, member:null, items:[], busy:false, scanner:null, armed:false };
+var $ = function(id){ return document.getElementById(id); };
+
+/* ---------- คุยกับหลังบ้านแบบ JSONP กัน CORS ---------- */
+function call(params, cb){
+  var name = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+  var done = false;
+  var t = setTimeout(function(){
+    if(done) return; done = true; cleanup();
+    cb({ ok:false, error:'เชื่อมต่อไม่ได้ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองใหม่' });
+  }, 20000);
+
+  window[name] = function(res){ if(done) return; done = true; clearTimeout(t); cleanup(); cb(res); };
+  function cleanup(){ try{ delete window[name]; }catch(e){ window[name] = undefined; }
+                      if(s && s.parentNode) s.parentNode.removeChild(s); }
+
+  var qs = ['callback=' + name];
+  for(var k in params) qs.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k] == null ? '' : params[k]));
+  var s = document.createElement('script');
+  s.src = API + '?' + qs.join('&');
+  s.onerror = function(){ if(done) return; done = true; clearTimeout(t); cleanup();
+                          cb({ ok:false, error:'เรียกเซิร์ฟเวอร์ไม่สำเร็จ ตรวจ URL เว็บแอป' }); };
+  document.body.appendChild(s);
+}
+
+function say(el, text, kind){ $(el).innerHTML = text ? '<div class="msg '+(kind||'info')+'">'+text+'</div>' : ''; }
+function show(id, on){ $(id).classList.toggle('hide', !on); }
+
+/* ---------- เข้าสู่ระบบ ---------- */
+$('btnLogin').onclick = function(){
+  var pin = $('pin').value.replace(/[^0-9]/g,'');
+  if(pin.length !== 4){ say('loginMsg','PIN ต้องเป็นตัวเลข 4 หลัก','err'); return; }
+  this.disabled = true; say('loginMsg','กำลังตรวจสอบ...','info');
+  call({ action:'login', pin:pin }, function(r){
+    $('btnLogin').disabled = false;
+    if(!r.ok){ say('loginMsg', r.error, 'err'); return; }
+    S.pin = pin; S.staff = r.staff;
+    $('who').innerHTML = r.staff.nick + '<br>' + r.staff.role;
+    say('loginMsg','');
+    show('scLogin', false); show('scFind', true);
+    $('q').focus();
+    call({ action:'items', pin:S.pin }, function(x){ if(x.ok){ S.items = x.items; fillItems(); } });
+  });
+};
+$('pin').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('btnLogin').click(); });
+
+/* ---------- ค้นหา ---------- */
+function doFind(q){
+  if(!q || q.length < 2){ say('findMsg','พิมพ์อย่างน้อย 2 ตัวอักษร','err'); return; }
+  say('findMsg','กำลังค้นหา...','info'); $('hits').innerHTML = '';
+  call({ action:'find', pin:S.pin, q:q }, function(r){
+    if(!r.ok){ say('findMsg', r.error, 'err'); return; }
+    if(!r.members.length){
+      say('findMsg','ไม่พบลูกค้า ถ้าเพิ่งมาวันนี้ ข้อมูลจะเข้าระบบพรุ่งนี้เช้า','err');
+      return;
+    }
+    say('findMsg','');
+    r.members.forEach(function(m){
+      var d = document.createElement('div');
+      d.className = 'hit';
+      d.innerHTML = '<b>' + m.name + '</b> <span class="tier t-' + m.tier + '">' + m.tier + '</span>' +
+                    '<br><small>' + m.telMask + ' &nbsp;|&nbsp; รหัส ' + m.cid +
+                    ' &nbsp;|&nbsp; แต้มคงเหลือ ' + m.balance + '</small>';
+      d.onclick = function(){ openMember(m); };
+      $('hits').appendChild(d);
+    });
+  });
+}
+$('btnFind').onclick = function(){ doFind($('q').value.trim()); };
+$('q').addEventListener('keydown', function(e){ if(e.key === 'Enter') doFind(this.value.trim()); });
+
+/* ---------- ยิง QR ---------- */
+$('btnScan').onclick = function(){
+  show('reader', true); show('btnStopScan', true); this.disabled = true;
+  S.scanner = new Html5Qrcode('reader');
+  S.scanner.start({ facingMode:'environment' }, { fps:10, qrbox:{ width:230, height:230 } },
+    function(text){ stopScan(); $('q').value = String(text).trim(); doFind(String(text).trim()); },
+    function(){}
+  ).catch(function(err){
+    say('findMsg','เปิดกล้องไม่ได้: ' + err + '<br>ใช้ช่องพิมพ์เบอร์โทรแทนได้', 'err');
+    show('reader', false); show('btnStopScan', false); $('btnScan').disabled = false;
+  });
+};
+function stopScan(){
+  if(!S.scanner) return;
+  S.scanner.stop().then(function(){ S.scanner.clear(); }).catch(function(){});
+  S.scanner = null;
+  show('reader', false); show('btnStopScan', false); $('btnScan').disabled = false;
+}
+$('btnStopScan').onclick = stopScan;
+
+/* ---------- หน้าลูกค้า ---------- */
+function fillItems(){
+  var s = $('item'); s.innerHTML = '';
+  S.items.forEach(function(it, i){
+    var o = document.createElement('option');
+    o.value = i;
+    o.textContent = it.custom ? it.label : (it.label + '  (' + it.pts + ' แต้ม)');
+    s.appendChild(o);
+  });
+  s.onchange = onItemChange;
+  onItemChange();
+}
+function onItemChange(){
+  var it = S.items[+$('item').value];
+  show('customBox', !!(it && it.custom));
+  resetConfirm();
+}
+function openMember(m){
+  stopScan();
+  S.member = m;
+  $('mName').textContent = m.name;
+  $('mSub').textContent = m.telMask;
+  $('mTier').textContent = m.tier;
+  $('mTier').className = 'tier t-' + m.tier;
+  $('mBal').textContent = m.balance;
+  $('mCid').textContent = m.cid;
+  $('mEarn').textContent = m.earned;
+  $('mExp').textContent = m.expiry || '-';
+  $('note').value = ''; $('customLabel').value = ''; $('customPts').value = '';
+  resetConfirm();
+  show('scFind', false); show('scMember', true); say('memberMsg','');
+  window.scrollTo(0,0);
+}
+$('btnBack').onclick = function(){
+  show('scMember', false); show('scFind', true);
+  $('q').value = ''; $('hits').innerHTML = ''; say('findMsg',''); S.member = null;
+};
+
+function resetConfirm(){
+  S.armed = false;
+  show('confirmBox', false); show('btnConfirm', false); show('btnPreview', true);
+}
+
+function readForm(){
+  var it = S.items[+$('item').value];
+  if(!it) return { err:'ยังไม่ได้เลือกรายการ' };
+  var label = it.label, pts = it.pts, code = it.code;
+  if(it.custom){
+    label = $('customLabel').value.trim();
+    pts = Math.round(Number($('customPts').value.replace(/[^0-9-]/g,'')));
+    if(!label) return { err:'ต้องใส่ชื่อกิจกรรม' };
+    if(!pts) return { err:'ต้องใส่จำนวนแต้ม' };
+  }
+  var note = $('note').value.trim();
+  if(pts < 0 && !S.staff.isManager) return { err:'การเพิ่มแต้มพิเศษ ทำได้เฉพาะผู้จัดการ' };
+  if(pts < 0 && note.length < 3) return { err:'การเพิ่มแต้มพิเศษ ต้องใส่หมายเหตุอธิบายเหตุผล' };
+  if(pts > 0 && S.member.balance < pts)
+    return { err:'แต้มไม่พอ คงเหลือ ' + S.member.balance + ' ต้องใช้ ' + pts +
+                 ' ขาดอีก ' + (pts - S.member.balance) + ' แต้ม' };
+  return { code:code, label:label, pts:pts, note:note };
+}
+
+$('btnPreview').onclick = function(){
+  var f = readForm();
+  if(f.err){ say('memberMsg', f.err, 'err'); return; }
+  say('memberMsg','');
+  $('cfLabel').textContent = (f.pts < 0 ? 'เพิ่มแต้มพิเศษ: ' : 'แลก: ') + f.label +
+                             '  (' + Math.abs(f.pts) + ' แต้ม)';
+  $('cfBefore').textContent = S.member.balance;
+  $('cfAfter').textContent = S.member.balance - f.pts;
+  show('confirmBox', true); show('btnConfirm', true); show('btnPreview', false);
+  S.armed = true;
+};
+
+$('btnConfirm').onclick = function(){
+  if(!S.armed || S.busy) return;
+  var f = readForm();
+  if(f.err){ say('memberMsg', f.err, 'err'); resetConfirm(); return; }
+
+  S.busy = true; this.disabled = true; this.textContent = 'กำลังบันทึก...';
+  say('memberMsg','');
+  var reqId = 'R' + Date.now() + Math.floor(Math.random()*1000);
+
+  call({ action:'redeem', pin:S.pin, cid:S.member.cid, code:f.code,
+         label:f.label, pts:f.pts, note:f.note, reqId:reqId }, function(r){
+    S.busy = false;
+    $('btnConfirm').disabled = false; $('btnConfirm').textContent = 'ยืนยันตัดแต้ม';
+    if(!r.ok){ say('memberMsg', r.error, 'err'); resetConfirm(); return; }
+    S.member.balance = r.balance;
+    $('mBal').textContent = r.balance;
+    say('memberMsg','บันทึกสำเร็จ' + (r.txId ? ' เลขที่ ' + r.txId : '') +
+        '<br>แต้มคงเหลือใหม่ ' + r.balance + ' แต้ม', 'ok');
+    resetConfirm();
+    $('note').value = ''; $('customLabel').value = ''; $('customPts').value = '';
+  });
+};
+
+/* เตือนเรื่องยังไม่ได้ใส่ URL */
+if(API.indexOf('http') !== 0){
+  say('loginMsg','ยังไม่ได้ใส่ URL เว็บแอปในไฟล์ HTML บรรทัด var API','err');
+}
+</script>
+</body>
+</html>
